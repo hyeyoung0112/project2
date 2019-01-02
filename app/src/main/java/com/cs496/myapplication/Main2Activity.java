@@ -144,6 +144,9 @@ public class Main2Activity extends AppCompatActivity {
                 case 2:
                     Tab3Etc tab3 = new Tab3Etc();
                     return tab3;
+                case 3:
+                    Tab3CCTV tab3CCTV = new Tab3CCTV();
+                    return tab3CCTV;
                 default:
                     return null;
 
