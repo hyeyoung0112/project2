@@ -32,7 +32,7 @@
 
         <meta-data android:name="com.facebook.sdk.ApplicationId"
             android:value="@string/facebook_app_id"/>
-        <activity android:name="com.cs496.myapplication.ZoomActivity" />
+        <activity android:name="com.cs496.myapplication.PicSelectActivity" />
         <activity android:name="com.cs496.myapplication.AddContactActivity"
             android:theme="@style/Theme.Transparent" />
         <activity android:name="com.cs496.myapplication.CameraActivity" />

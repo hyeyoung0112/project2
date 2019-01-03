@@ -50,7 +50,7 @@ public class Tab2Images extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if (ReadPermissioncheck()) {
-                    Intent intent = new Intent(getActivity().getApplicationContext(), ZoomActivity.class);
+                    Intent intent = new Intent(getActivity().getApplicationContext(), PicSelectActivity.class);
                     intent.putExtra("imagePath", adapter.getItem(position));
                     intent.putExtra("writePermission", writePermission);
                     startActivity(intent);

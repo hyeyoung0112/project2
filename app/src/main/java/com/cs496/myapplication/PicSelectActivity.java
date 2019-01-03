@@ -20,7 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-public class ZoomActivity extends FragmentActivity {
+public class PicSelectActivity extends FragmentActivity {
     // Hold a reference to the current animator,
     // so that it can be canceled mid-way.
     private Animator mCurrentAnimator;
@@ -38,7 +38,7 @@ public class ZoomActivity extends FragmentActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_zoom);
+        setContentView(R.layout.activity_picselect);
 
         // Hook up clicks on the thumbnail views.
         Intent intent = getIntent();
