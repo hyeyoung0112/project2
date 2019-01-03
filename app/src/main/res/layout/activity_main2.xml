@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context=".Main2Activity">
+    tools:context="com.cs496.week2application.Main2Activity">
 
     <android.support.design.widget.AppBarLayout
         android:id="@+id/appbar"
@@ -53,13 +53,6 @@
 
             <android.support.design.widget.TabItem
                 android:id="@+id/tabItem3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@color/skyblue"
-
-                android:text="Share" />
-            <android.support.design.widget.TabItem
-                android:id="@+id/tabItem4"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@color/skyblue"

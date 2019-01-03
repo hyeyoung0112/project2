@@ -1,4 +1,4 @@
-package com.cs496.myapplication;
+package com.cs496.week2application;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import java.util.ArrayList;
 
 /**

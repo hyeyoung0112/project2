@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.cs496.myapplication">
+    package="com.cs496.week2application">
 
 
 
@@ -30,16 +30,32 @@
         android:largeHeap="true">
 
 
-        <meta-data android:name="com.facebook.sdk.ApplicationId"
+        <meta-data
+            android:name="com.facebook.sdk.ApplicationId"
             android:value="@string/facebook_app_id"/>
-        <activity android:name="com.cs496.myapplication.PicSelectActivity" />
-        <activity android:name="com.cs496.myapplication.AddContactActivity"
+        <activity android:name="com.facebook.FacebookActivity"
+            android:configChanges= "keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+            android:label="@string/app_name" />
+        <activity android:name="com.facebook.CustomTabActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="@string/fb_login_protocol_scheme" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name="com.cs496.week2application.PicSelectActivity"
+            android:configChanges=
+                "keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+            android:theme="@style/AppTheme.NoActionBar"/>
+        <activity android:name="com.cs496.week2application.AddContactActivity"
             android:theme="@style/Theme.Transparent" />
-        <activity android:name="com.cs496.myapplication.CameraActivity" />
-        <activity android:name="com.cs496.myapplication.SaveActivity" />
+        <activity android:name="com.cs496.week2application.CameraActivity" />
+        <activity android:name="com.cs496.week2application.SaveActivity" />
         <activity
-            android:name="com.cs496.myapplication.Main2Activity"
-            android:label="혜영정우"
+            android:name="com.cs496.week2application.Main2Activity"
+            android:label="CS496 Week2"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -59,9 +75,7 @@
         <meta-data android:name="com.kakao.sdk.AppKey"
             android:value="@string/kakao_app_key" />
 
-
-
-        <provider android:authorities="com.facebook.app.FacebookContentProvider207997280147786"
+        <provider android:authorities="com.facebook.app.FacebookContentProvider1988964427860689"
             android:name="com.facebook.FacebookContentProvider"
             android:exported="true" />
 

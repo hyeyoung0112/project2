@@ -1,10 +1,13 @@
-package com.cs496.myapplication;
+package com.cs496.week2application;
 
-import android.animation.Animator;
+import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.app.FragmentActivity;
@@ -14,26 +17,45 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.FacebookSdk;
+import com.facebook.login.LoginManager;
+import com.facebook.share.Sharer;
+import com.facebook.share.model.SharePhoto;
+import com.facebook.share.model.SharePhotoContent;
+import com.facebook.share.widget.ShareDialog;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
+
 import net.alhazmy13.imagefilter.ImageFilter;
 
+import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
 public class PicSelectActivity extends FragmentActivity {
-    // Hold a reference to the current animator,
-    // so that it can be canceled mid-way.
-    private Animator mCurrentAnimator;
-
-    // The system "short" animation time duration, in milliseconds. This
-    // duration is ideal for subtle animations or animations that occur
-    // very frequently.
-    private int mShortAnimationDuration;
     Bitmap mainImage;
 
-    ImageView zoomview;
+    ImageView selectView;
     RecyclerView recyclerView;
     boolean writePermission;
+    View facebookBtn;
+    View instagramBtn;
+    View kakaotalkBtn;
+
+    private LoginManager loginManager;
+    private CallbackManager callbackManager;
+    private ShareDialog shareDialog;
+
+    public Uri getImageUri(Context inContext, Bitmap inImage) {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        inImage.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+        String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "Title", null);
+        return Uri.parse(path);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,16 +65,23 @@ public class PicSelectActivity extends FragmentActivity {
         // Hook up clicks on the thumbnail views.
         Intent intent = getIntent();
         writePermission = intent.getBooleanExtra("writePermission", false);
-        zoomview = findViewById(R.id.expanded_image);
+        selectView = findViewById(R.id.expanded_image);
         recyclerView = findViewById(R.id.filterThumbnails);
+        facebookBtn = findViewById(R.id.facebookBtn);
+        instagramBtn = findViewById(R.id.instagramBtn);
+        kakaotalkBtn = findViewById(R.id.kakaotalkBtn);
 
-        //Save button gets current image in zoomview and save it to gallery
+        FacebookSdk.sdkInitialize(getApplicationContext());
+        callbackManager = CallbackManager.Factory.create();
+        shareDialog = new ShareDialog(this);
+
+        //Save button gets current image in selectView and save it to gallery
         final View savebutton = findViewById(R.id.saveButton);
         savebutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (writePermission){
-                    BitmapDrawable filteredDrawable = (BitmapDrawable) zoomview.getDrawable();
+                    BitmapDrawable filteredDrawable = (BitmapDrawable) selectView.getDrawable();
                     Bitmap newBP = filteredDrawable.getBitmap();
                     SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
                     String title = sdf.format(new Date());
@@ -77,10 +106,99 @@ public class PicSelectActivity extends FragmentActivity {
             }
         });
 
+        //share buttons: facebook
+        facebookBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Target target = new Target() {
+                    @Override
+                    public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                        SharePhoto sharePhoto = new SharePhoto.Builder()
+                                .setBitmap(bitmap)
+                                .build();
+                        if (ShareDialog.canShow(SharePhotoContent.class)) {
+                            SharePhotoContent content = new SharePhotoContent.Builder()
+                                    .addPhoto(sharePhoto)
+                                    .build();
+                            shareDialog.show(content);
+                        }
+                    }
 
-        // Retrieve and cache the system's default "short" animation time.
-        mShortAnimationDuration = getResources().getInteger(
-                android.R.integer.config_shortAnimTime);
+                    @Override
+                    public void onBitmapFailed(Drawable errorDrawable) {
+                    }
+
+                    @Override
+                    public void onPrepareLoad(Drawable placeHolderDrawable) {
+                    }
+                };
+
+                shareDialog.registerCallback(callbackManager, new FacebookCallback<Sharer.Result>() {
+                    @Override
+                    public void onSuccess(Sharer.Result result) {
+                        Toast.makeText(getApplicationContext(), "Shared successfully.", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onCancel() {
+                        Toast.makeText(getApplicationContext(), "Share cancelled.", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onError(FacebookException error) {
+                        Toast.makeText(getApplicationContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+                Bitmap image = ((BitmapDrawable) selectView.getDrawable()).getBitmap();
+                Uri bitmapuri = getImageUri(getApplicationContext(), image);
+//
+                //We will fetch photo from link and convert to bitmap
+                Picasso.with(getBaseContext())
+                        .load(bitmapuri)
+                        .into(target);
+            }
+        });
+
+        //share buttons: instagram
+        instagramBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent instagramshare = new Intent(Intent.ACTION_SEND);
+                instagramshare.setType("image/*");
+
+                Bitmap tempimage2 = ((BitmapDrawable) selectView.getDrawable()).getBitmap();
+                Uri bitmapUri = getImageUri(getApplicationContext(), tempimage2);
+
+                try {
+                    instagramshare.putExtra(Intent.EXTRA_STREAM, bitmapUri);
+
+                    instagramshare.putExtra(Intent.EXTRA_TEXT, "텍스트는 지원하지 않음!");
+                    instagramshare.setPackage("com.instagram.android");
+                    startActivity(instagramshare);
+                } catch (ActivityNotFoundException e) {
+                    Toast.makeText(getApplicationContext(), "인스타그램이 설치되어 있지 않습니다.", Toast.LENGTH_SHORT).show();
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        //share buttons: kakaotalk
+        kakaotalkBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(Intent.ACTION_SEND);
+                intent.setType("image/png");
+                Bitmap tempimage3 = ((BitmapDrawable) selectView.getDrawable()).getBitmap();
+                Uri bitmapUri = getImageUri(getApplicationContext(), tempimage3);
+
+                intent.putExtra(Intent.EXTRA_STREAM, bitmapUri);
+                intent.setPackage("com.kakao.talk");
+                startActivity(intent);
+            }
+        });
     }
 
     @Override
@@ -89,7 +207,7 @@ public class PicSelectActivity extends FragmentActivity {
         final String imgPath = getIntent().getStringExtra("imagePath");
         if (imgPath != ""){
             mainImage = BitmapFactory.decodeFile(imgPath);
-            zoomview.setImageBitmap(mainImage);
+            selectView.setImageBitmap(mainImage);
             LoadFilterThumbnails();
         }
         else {
@@ -139,8 +257,8 @@ public class PicSelectActivity extends FragmentActivity {
     }
 
     private void LoadPicture(int index){
-        if (index == 0) zoomview.setImageBitmap(mainImage);
-        else zoomview.setImageBitmap(ApplyFilterByIndex(mainImage, index));
+        if (index == 0) selectView.setImageBitmap(mainImage);
+        else selectView.setImageBitmap(ApplyFilterByIndex(mainImage, index));
         return;
     }
 

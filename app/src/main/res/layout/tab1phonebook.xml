@@ -11,7 +11,7 @@
     android:paddingRight="30dp"
     android:paddingBottom="20dp"
     android:orientation="vertical"
-    tools:context="com.cs496.myapplication.Main2Activity"
+    tools:context="com.cs496.week2application.Main2Activity"
     tools:layout_editor_absoluteY="81dp">
 
         <ListView

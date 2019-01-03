@@ -1,4 +1,4 @@
-package com.cs496.myapplication;
+package com.cs496.week2application;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
