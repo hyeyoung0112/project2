@@ -1,9 +1,6 @@
 package com.cs496.week2application;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +10,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by Parsania Hardik on 11-May-17.
@@ -20,12 +19,15 @@ import java.util.ArrayList;
 public class Tab1ContactViewAdapter extends BaseAdapter {
 
     private Context context;
-    private ArrayList<ContactModel> contactModelArrayList;
+    private Map<String, ContactModel> contactModelMap;
+    private ArrayList<String> contactKeyList;
 
-    public Tab1ContactViewAdapter(Context context, ArrayList<ContactModel> contactModelArrayList) {
-
+    public Tab1ContactViewAdapter(Context context, Map<String, ContactModel>contactMap) {
         this.context = context;
-        this.contactModelArrayList = contactModelArrayList;
+        this.contactModelMap = contactMap;
+        Set<String> keySet = contactModelMap.keySet();
+        this.contactKeyList = new ArrayList<String>();
+        this.contactKeyList.addAll(keySet);
     }
 
     @Override
@@ -40,12 +42,12 @@ public class Tab1ContactViewAdapter extends BaseAdapter {
 
     @Override
     public int getCount() {
-        return contactModelArrayList.size();
+        return contactModelMap.size();
     }
 
     @Override
     public Object getItem(int position) {
-        return contactModelArrayList.get(position);
+        return contactModelMap.get(contactKeyList.get(position));
     }
 
     @Override
@@ -73,11 +75,12 @@ public class Tab1ContactViewAdapter extends BaseAdapter {
             holder = (ViewHolder)convertView.getTag();
         }
 
-        holder.tvname.setText(contactModelArrayList.get(position).getName());
-        holder.tvnumber.setText(contactModelArrayList.get(position).getNumber());
-        if (contactModelArrayList.get(position).getIcon() != null) holder.ivphoto.setImageBitmap(getBitmapFromString(contactModelArrayList.get(position).getIcon()));
+        ContactModel contact = contactModelMap.get(contactKeyList.get(position));
+        holder.tvname.setText(contact.getName());
+        holder.tvnumber.setText(contact.getNumber());
+        if (contact.getIcon() != null) holder.ivphoto.setImageBitmap(contact.getIcon());
 
-        Log.d("FINAL CONTACT>>>>>", contactModelArrayList.get(position).getName() + "  " + contactModelArrayList.get(position).getNumber());
+        //Log.d("FINAL CONTACT>>>>>", contactModelMap.get(position).getName() + "  " + contactModelMap.get(position).getNumber());
 
         return convertView;
     }
@@ -87,14 +90,5 @@ public class Tab1ContactViewAdapter extends BaseAdapter {
         protected TextView tvname, tvnumber;
         protected ImageView ivphoto;
 
-    }
-
-    private Bitmap getBitmapFromString(String jsonString) {
-        /*
-         * This Function converts the String back to Bitmap
-         * */
-        byte[] decodedString = Base64.decode(jsonString, Base64.DEFAULT);
-        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-        return decodedByte;
     }
 }

@@ -1,5 +1,8 @@
 package com.cs496.week2application;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -7,6 +10,7 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -52,7 +56,7 @@ public class HttpConnection {
                         // Append the text to string buffer.
                         readTextBuf.append(line);
                         sb.append(line);
-                        Log.d("SERVER_CONNECTION>>>>>", "Got StringBuilder: " + sb.toString());
+                        //Log.d("SERVER_CONNECTION>>>>>", "Got StringBuilder: " + sb.toString());
                         // Continue to read text line.
                         line = bufReader.readLine();
                     }
@@ -86,7 +90,7 @@ public class HttpConnection {
         };
         sendHttpRequestThread.start();
         while(sb.toString() == "");
-        Log.d("SERVER_CONNECTION>>>>>", "HttpConnection will return: " + sb.toString());
+        //Log.d("SERVER_CONNECTION>>>>>", "HttpConnection will return: " + sb.toString());
         return sb.toString();
     }
 
@@ -126,5 +130,31 @@ public class HttpConnection {
         sendHttpRequestThread.start();
         //while(THREAD IS RUNNING);
 
+    }
+
+
+
+    private String getStringFromBitmap(Bitmap bitmapPicture) {
+        /*
+         * This functions converts Bitmap picture to a string which can be
+         * JSONified.
+         * */
+        final int COMPRESSION_QUALITY = 100;
+        String encodedImage;
+        ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
+        bitmapPicture.compress(Bitmap.CompressFormat.PNG, COMPRESSION_QUALITY,
+                byteArrayBitmapStream);
+        byte[] b = byteArrayBitmapStream.toByteArray();
+        encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
+        return encodedImage;
+    }
+
+    private Bitmap getBitmapFromString(String jsonString) {
+        /*
+         * This Function converts the String back to Bitmap
+         * */
+        byte[] decodedString = Base64.decode(jsonString, Base64.DEFAULT);
+        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+        return decodedByte;
     }
 }

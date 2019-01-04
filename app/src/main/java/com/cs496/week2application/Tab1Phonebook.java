@@ -46,13 +46,16 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 import java.lang.reflect.Type;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestPermissionsResultCallback {
     private ListView contactsListView;
     private Tab1ContactViewAdapter adapter;
-    private ArrayList<ContactModel> contactModelArrayList;
+    private Map<String, ContactModel> contactModelMap;
     private ArrayList<JSONObject> jsonArr = new ArrayList<JSONObject>();
     private static final int PERMISSIONS_REQUEST_CODE = 100;
     String[] REQUIRED_PERMISSIONS = {Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS};
@@ -67,12 +70,11 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
         Log.i("전화번호부 fragment", "onCreateView()");
         View rootView = inflater.inflate(R.layout.tab1phonebook, container, false);
 
-
         contactsListView = rootView.findViewById(R.id.contactLV);
-        adapter = new Tab1ContactViewAdapter(this.getContext(), contactModelArrayList);
-
         msgButton = (FloatingActionButton) rootView.findViewById(R.id.messageButton);
         addButton = rootView.findViewById(R.id.addContactButton);
+
+        contactModelMap = new HashMap<String, ContactModel>();
 
         return rootView;
     }
@@ -104,7 +106,7 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
             public void onClick(View view) {
                 if (contactsListView.getCheckedItemCount() != 0 && sel_pos!=-1) {
                     Uri smsUri;
-
+                    Log.d("fatal cause>>>>>", "Selected Position: " + sel_pos);
                     String temp = ((ContactModel) contactsListView.getItemAtPosition(sel_pos)).getNumber();
                     String phone[] = new String[1];
                     if (temp.contains("-")) {
@@ -188,109 +190,76 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
 
     private void LoadContacts(ListView LV) {
         Cursor phones = getActivity().getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC");
+        while (phones.moveToNext()) {
+            //default photo is in res/drawable folder
+            Bitmap bp = BitmapFactory.decodeResource(getContext().getResources(),
+                    R.drawable.default_contact_photo);
 
-        if (phones.getCount() != contactModelArrayList.size()) {
-            contactModelArrayList.removeAll(contactModelArrayList);
-            while (phones.moveToNext()) {
-                //default photo is in res/drawable folder
-                Bitmap bp = BitmapFactory.decodeResource(getContext().getResources(),
-                        R.drawable.default_contact_photo);
+            //get name, number, and image uri from contact info
+            String name = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
+            String phoneNumber = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+            String image_uri = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_URI));
 
-                //get name, number, and image uri from contact info
-                String name = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
-                String phoneNumber = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
-                String image_uri = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_URI));
-
-                //if image is not default
-                if (image_uri != null) {
-                    try {
-                        bp = MediaStore.Images.Media
-                                .getBitmap(getContext().getContentResolver(),
-                                        Uri.parse(image_uri));
-                    } catch (FileNotFoundException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                }
-
-                ContactModel contactModel = new ContactModel();
-                contactModel.setName(name);
-                contactModel.setNumber(phoneNumber);
-                contactModel.setIcon(getStringFromBitmap(bp));
-                contactModelArrayList.add(contactModel);
-                Log.d("DEVICE CONTACT>>>>>", name + "  " + phoneNumber);
-
-                //add contact information in form of JSONObject to jsonArr
-
-                JSONObject obj = new JSONObject();
+            //if image is not default
+            if (image_uri != null) {
                 try {
-                    obj.put("name", name);
-                    obj.put("number", phoneNumber);
-                    obj.put("photo", getStringFromBitmap(bp));
-                    jsonArr.add(obj);
-                } catch (JSONException e) {
+                    bp = MediaStore.Images.Media
+                            .getBitmap(getContext().getContentResolver(),
+                                    Uri.parse(image_uri));
+                } catch (FileNotFoundException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
-            phones.close();
-        }
 
-        ArrayList<ContactModel> FromServerContacts = new ArrayList<ContactModel>();
+            ContactModel contactModel = new ContactModel();
+            contactModel.setName(name);
+            contactModel.setNumber(phoneNumber);
+            contactModel.setIcon(bp);
+            contactModelMap.put(name, contactModel);
+            //Log.d("DEVICE CONTACT>>>>>", name + "  " + phoneNumber);
+
+            //add contact information in form of JSONObject to jsonArr
+
+            JSONObject obj = new JSONObject();
+            try {
+                obj.put("name", name);
+                obj.put("number", phoneNumber);
+                obj.put("photo", getStringFromBitmap(bp));
+                jsonArr.add(obj);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        phones.close();
+
+        ArrayList<ContactServerModel> FromServerContacts;
         String sb = HttpConnection.GetAllContacts();
-        Log.d("SERVER_CONNECTION>>>>>", "Got string: " + sb);
+        //Log.d("SERVER_CONNECTION>>>>>", "Got string: " + sb);
         Gson gson = new Gson();
-        Type type = new TypeToken<List<ContactModel>>(){}.getType();
+        Type type = new TypeToken<List<ContactServerModel>>(){}.getType();
         FromServerContacts = gson.fromJson(sb, type);
 
         for (int i = 0; i<FromServerContacts.size(); i++) {
-            ContactModel serverContact = FromServerContacts.get(i);
-            Log.d("SERVER CONTACT>>>>>", serverContact.getName() + "  " + serverContact.getNumber());
-            boolean alreadyUpdated = false;
-            for (ContactModel contact: contactModelArrayList) {
-                if (contact.getName() == serverContact.getName() && contact.getNumber() ==serverContact.getNumber()) {
-                    alreadyUpdated = true;
-                }
-            }
-            if (!alreadyUpdated) {
-                contactModelArrayList.add(serverContact);
-            }
+            ContactServerModel serverModel = FromServerContacts.get(i);
+            ContactModel serverContact = new ContactModel();
+            serverContact.setName(serverModel.getName());
+            serverContact.setNumber(serverModel.getNumber());
+            if (serverModel.getIcon() != null) serverContact.setIcon(getBitmapFromString(serverModel.getIcon()));
+            else serverContact.setIcon(BitmapFactory.decodeResource(getContext().getResources(),R.drawable.default_contact_photo));
+            contactModelMap.put(serverContact.getName(), serverContact);
         }
 
-        File firstmyfile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-
-        File myfile = new File(firstmyfile, "json_phonebook.txt");
-        try (FileWriter fileWriter = new FileWriter(myfile)) {
-            String jsonstring;
-            for (JSONObject s : jsonArr) {
-                jsonstring = s.toString();
-                fileWriter.append(jsonstring);
-            }
-        } catch (IOException e) {
-            //Handle exception
-        }
-
-        adapter = new Tab1ContactViewAdapter(getActivity().getApplicationContext(), contactModelArrayList);
+        adapter = new Tab1ContactViewAdapter(getActivity().getApplicationContext(), contactModelMap);
         if (!(adapter.isEmpty())) {
             LV.setAdapter(adapter);
         }
         return;
     }
-    /*
-    private void loadContacts(ListView LV){
-        String sb = HttpConnection.GetAllContacts();
-        Log.d("HTTP_URL_CONNECTION", "Got string: " + sb);
-        Gson gson = new Gson();
-        Type type = new TypeToken<List<ContactModel>>(){}.getType();
-        contactModelArrayList = gson.fromJson(sb, type);
-        adapter = new Tab1ContactViewAdapter(getActivity().getApplicationContext(), contactModelArrayList);
-        if (!(adapter.isEmpty())) {
-            LV.setAdapter(adapter);
-        }
-    }
-    */
+
     @Override
     public void onPause() {
         super.onPause();
@@ -324,5 +293,13 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
         return encodedImage;
     }
 
+    private Bitmap getBitmapFromString(String jsonString) {
+        /*
+         * This Function converts the String back to Bitmap
+         * */
+        byte[] decodedString = Base64.decode(jsonString, Base64.DEFAULT);
+        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+        return decodedByte;
+    }
 }
 
