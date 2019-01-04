@@ -56,7 +56,6 @@ public class HttpConnection {
                         // Append the text to string buffer.
                         readTextBuf.append(line);
                         sb.append(line);
-                        //Log.d("SERVER_CONNECTION>>>>>", "Got StringBuilder: " + sb.toString());
                         // Continue to read text line.
                         line = bufReader.readLine();
                     }
@@ -102,7 +101,7 @@ public class HttpConnection {
                 HttpURLConnection httpConnection = null;
                 try {
                     // Set URL to get all contacts
-                    URL url = new URL(defaultURL + "/contacts");
+                    URL url = new URL(defaultURL + "/contacts/");
                     // Open HttpURLConnection of the URL and set method & timeout
                     httpConnection = (HttpURLConnection) url.openConnection();
                     httpConnection.setRequestMethod("POST");
@@ -115,46 +114,21 @@ public class HttpConnection {
                     writer.flush();
                     writer.close();
                     os.close();
+
+                    httpConnection.connect();
+                    Log.d("ADDCONTACT>>>>>", "Request to post " + contact);
+                    Log.d("ADDCONTACT>>>>>", "Response:" + httpConnection.getResponseMessage());
                 } catch (MalformedURLException e) {
-
+                    Log.d("ADDCONTACT>>>>>", "malformed url exception");
                 } catch (IOException e) {
-
+                    Log.d("ADDCONTACT>>>>>", "IOException");
                 } finally {
                     if (httpConnection != null) {
                         httpConnection.disconnect();
-                        httpConnection = null;
                     }
                 }
             }
         };
         sendHttpRequestThread.start();
-        //while(THREAD IS RUNNING);
-
-    }
-
-
-
-    private String getStringFromBitmap(Bitmap bitmapPicture) {
-        /*
-         * This functions converts Bitmap picture to a string which can be
-         * JSONified.
-         * */
-        final int COMPRESSION_QUALITY = 100;
-        String encodedImage;
-        ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
-        bitmapPicture.compress(Bitmap.CompressFormat.PNG, COMPRESSION_QUALITY,
-                byteArrayBitmapStream);
-        byte[] b = byteArrayBitmapStream.toByteArray();
-        encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
-        return encodedImage;
-    }
-
-    private Bitmap getBitmapFromString(String jsonString) {
-        /*
-         * This Function converts the String back to Bitmap
-         * */
-        byte[] decodedString = Base64.decode(jsonString, Base64.DEFAULT);
-        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-        return decodedByte;
     }
 }

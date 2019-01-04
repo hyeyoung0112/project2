@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -189,6 +190,20 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
     }
 
     private void LoadContacts(ListView LV) {
+        //Get contacts from server
+        ArrayList<ContactServerModel> FromServerContacts;
+        String sb = HttpConnection.GetAllContacts();
+        Log.d("SERVER_CONNECTION>>>>>", "Got string: " + sb);
+        Gson gson = new Gson();
+        Type type = new TypeToken<List<ContactServerModel>>(){}.getType();
+        FromServerContacts = gson.fromJson(sb, type);
+        Set<String> ServerContactNames = new HashSet<String>();
+        for (int i = 0; i < FromServerContacts.size(); i++) {
+            ServerContactNames.add(FromServerContacts.get(i).getName());
+            Log.d("ADDCONTACT>>>>>", "Names in server: " + FromServerContacts.get(i).getName());
+        }
+
+        //Get contacts from device
         Cursor phones = getActivity().getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC");
         while (phones.moveToNext()) {
             //default photo is in res/drawable folder
@@ -222,35 +237,36 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
             contactModelMap.put(name, contactModel);
             //Log.d("DEVICE CONTACT>>>>>", name + "  " + phoneNumber);
 
-            //add contact information in form of JSONObject to jsonArr
-
-            JSONObject obj = new JSONObject();
-            try {
-                obj.put("name", name);
-                obj.put("number", phoneNumber);
-                obj.put("photo", getStringFromBitmap(bp));
-                jsonArr.add(obj);
-            } catch (JSONException e) {
-                e.printStackTrace();
+            //add contact information to server if server doesn't have such contact
+            if (!ServerContactNames.contains(name)) {
+                JSONObject obj = new JSONObject();
+                try {
+                    obj.put("name", name);
+                    obj.put("phone", phoneNumber);
+                    obj.put("photo", getStringFromBitmap(bp));
+                    Log.d("ADDCONTACT>>>>>", "Post to server: " + obj.toString());
+                    jsonArr.add(obj);
+                    HttpConnection.AddContactToServer(obj);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             }
         }
         phones.close();
 
-        ArrayList<ContactServerModel> FromServerContacts;
-        String sb = HttpConnection.GetAllContacts();
-        //Log.d("SERVER_CONNECTION>>>>>", "Got string: " + sb);
-        Gson gson = new Gson();
-        Type type = new TypeToken<List<ContactServerModel>>(){}.getType();
-        FromServerContacts = gson.fromJson(sb, type);
-
+        //add server contacts which are not in device
         for (int i = 0; i<FromServerContacts.size(); i++) {
             ContactServerModel serverModel = FromServerContacts.get(i);
-            ContactModel serverContact = new ContactModel();
-            serverContact.setName(serverModel.getName());
-            serverContact.setNumber(serverModel.getNumber());
-            if (serverModel.getIcon() != null) serverContact.setIcon(getBitmapFromString(serverModel.getIcon()));
-            else serverContact.setIcon(BitmapFactory.decodeResource(getContext().getResources(),R.drawable.default_contact_photo));
-            contactModelMap.put(serverContact.getName(), serverContact);
+            if (contactModelMap.get(serverModel.getName()) == null) {
+                ContactModel serverContact = new ContactModel();
+                serverContact.setName(serverModel.getName());
+                serverContact.setNumber(serverModel.getNumber());
+                if (serverModel.getIcon() != null)
+                    serverContact.setIcon(getBitmapFromString(serverModel.getIcon()));
+                else
+                    serverContact.setIcon(BitmapFactory.decodeResource(getContext().getResources(), R.drawable.default_contact_photo));
+                contactModelMap.put(serverContact.getName(), serverContact);
+            }
         }
 
         adapter = new Tab1ContactViewAdapter(getActivity().getApplicationContext(), contactModelMap);
