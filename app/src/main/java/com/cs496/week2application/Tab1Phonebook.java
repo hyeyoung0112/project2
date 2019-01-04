@@ -21,6 +21,7 @@ import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v4.content.PermissionChecker;
 import android.text.TextUtils;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,14 +30,24 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+
+import java.lang.reflect.Type;
+import java.util.List;
+import java.util.Set;
 
 public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestPermissionsResultCallback {
     private ListView contactsListView;
@@ -59,8 +70,6 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
 
         contactsListView = rootView.findViewById(R.id.contactLV);
         adapter = new Tab1ContactViewAdapter(this.getContext(), contactModelArrayList);
-        contactModelArrayList = new ArrayList<>();
-
 
         msgButton = (FloatingActionButton) rootView.findViewById(R.id.messageButton);
         addButton = rootView.findViewById(R.id.addContactButton);
@@ -74,7 +83,7 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
         Log.i("전화번호부 fragment", "onResume()");
 
         if (Permissioncheck()) {
-            loadContacts(contactsListView);
+            LoadContacts(contactsListView);
         }
 
         WritePermissioncheck();
@@ -85,22 +94,15 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
                 if (sel_pos == position) {
                     contactsListView.setAdapter(adapter);
                     sel_pos = -1;
-
-
                 } else {
                     sel_pos = position;
                 }
-
             }
-
         });
         msgButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (contactsListView.getCheckedItemCount() != 0 && sel_pos!=-1) {
-
-
-
                     Uri smsUri;
 
                     String temp = ((ContactModel) contactsListView.getItemAtPosition(sel_pos)).getNumber();
@@ -116,18 +118,16 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
                         phone[0] = temp;
                     }
 
-
                     smsUri = Uri.parse("smsto:" + Uri.encode(TextUtils.join(",", phone)));
 
-
                     Intent intent;
+
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                         intent = new Intent(Intent.ACTION_SENDTO, smsUri);
                         intent.setPackage(Telephony.Sms.getDefaultSmsPackage(getActivity().getApplicationContext()));
                     } else {
                         intent = new Intent(Intent.ACTION_VIEW, smsUri);
                     }
-
 
                     contactsListView.clearChoices();
                     startActivity(intent);
@@ -138,7 +138,6 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
                     Intent intent = pm.getLaunchIntentForPackage(defaultApplication);
 
                     startActivity(intent);
-
                 }
             }
         });
@@ -159,18 +158,14 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
 
     public int checkselfpermission(String permission) {
         return PermissionChecker.checkSelfPermission(getContext(), permission);
-
-
     }
 
     public boolean Permissioncheck() {
         if (checkselfpermission(Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
-            loadContacts(contactsListView);
             return true;
         } else {
             ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.READ_CONTACTS}, 100);
             if (checkselfpermission(Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
-                loadContacts(contactsListView);
                 return true;
             } else {
                 return false;
@@ -191,12 +186,9 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
         }
     }
 
-    private void loadContacts(ListView LV) {
-
-        StringBuilder builder = new StringBuilder();
-        ContentResolver contentResolver = getActivity().getContentResolver();
-
+    private void LoadContacts(ListView LV) {
         Cursor phones = getActivity().getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC");
+
         if (phones.getCount() != contactModelArrayList.size()) {
             contactModelArrayList.removeAll(contactModelArrayList);
             while (phones.moveToNext()) {
@@ -227,9 +219,9 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
                 ContactModel contactModel = new ContactModel();
                 contactModel.setName(name);
                 contactModel.setNumber(phoneNumber);
-                contactModel.setIcon(bp);
+                contactModel.setIcon(getStringFromBitmap(bp));
                 contactModelArrayList.add(contactModel);
-                //Log.d("name>>", name + "  " + phoneNumber);
+                Log.d("DEVICE CONTACT>>>>>", name + "  " + phoneNumber);
 
                 //add contact information in form of JSONObject to jsonArr
 
@@ -237,7 +229,7 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
                 try {
                     obj.put("name", name);
                     obj.put("number", phoneNumber);
-                    obj.put("photo", bp);
+                    obj.put("photo", getStringFromBitmap(bp));
                     jsonArr.add(obj);
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -246,6 +238,26 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
             phones.close();
         }
 
+        ArrayList<ContactModel> FromServerContacts = new ArrayList<ContactModel>();
+        String sb = HttpConnection.GetAllContacts();
+        Log.d("SERVER_CONNECTION>>>>>", "Got string: " + sb);
+        Gson gson = new Gson();
+        Type type = new TypeToken<List<ContactModel>>(){}.getType();
+        FromServerContacts = gson.fromJson(sb, type);
+
+        for (int i = 0; i<FromServerContacts.size(); i++) {
+            ContactModel serverContact = FromServerContacts.get(i);
+            Log.d("SERVER CONTACT>>>>>", serverContact.getName() + "  " + serverContact.getNumber());
+            boolean alreadyUpdated = false;
+            for (ContactModel contact: contactModelArrayList) {
+                if (contact.getName() == serverContact.getName() && contact.getNumber() ==serverContact.getNumber()) {
+                    alreadyUpdated = true;
+                }
+            }
+            if (!alreadyUpdated) {
+                contactModelArrayList.add(serverContact);
+            }
+        }
 
         File firstmyfile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 
@@ -253,13 +265,9 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
         try (FileWriter fileWriter = new FileWriter(myfile)) {
             String jsonstring;
             for (JSONObject s : jsonArr) {
-
                 jsonstring = s.toString();
-
                 fileWriter.append(jsonstring);
-
             }
-
         } catch (IOException e) {
             //Handle exception
         }
@@ -270,7 +278,19 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
         }
         return;
     }
-
+    /*
+    private void loadContacts(ListView LV){
+        String sb = HttpConnection.GetAllContacts();
+        Log.d("HTTP_URL_CONNECTION", "Got string: " + sb);
+        Gson gson = new Gson();
+        Type type = new TypeToken<List<ContactModel>>(){}.getType();
+        contactModelArrayList = gson.fromJson(sb, type);
+        adapter = new Tab1ContactViewAdapter(getActivity().getApplicationContext(), contactModelArrayList);
+        if (!(adapter.isEmpty())) {
+            LV.setAdapter(adapter);
+        }
+    }
+    */
     @Override
     public void onPause() {
         super.onPause();
@@ -288,5 +308,21 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
         super.onDestroy();
         Log.i("전화번호부 fragment", "onDestroy()");
     }
+
+    private String getStringFromBitmap(Bitmap bitmapPicture) {
+        /*
+         * This functions converts Bitmap picture to a string which can be
+         * JSONified.
+         * */
+        final int COMPRESSION_QUALITY = 100;
+        String encodedImage;
+        ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
+        bitmapPicture.compress(Bitmap.CompressFormat.PNG, COMPRESSION_QUALITY,
+                byteArrayBitmapStream);
+        byte[] b = byteArrayBitmapStream.toByteArray();
+        encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
+        return encodedImage;
+    }
+
 }
 

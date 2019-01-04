@@ -2,16 +2,18 @@ package com.cs496.week2application;
 
 import android.graphics.Bitmap;
 
-public class ContactModel{
-    private String name, number;
-    private Bitmap iconbp ;
+import java.util.Base64;
 
-    public Bitmap getIcon() {
-        return this.iconbp ;
+public class ContactModel{
+    private String name, phone;
+    private String iconbase64;
+
+    public String getIcon() {
+        return this.iconbase64 ;
     }
 
-    public void setIcon(Bitmap icon) {
-        this.iconbp = icon ;
+    public void setIcon(String icon) {
+        this.iconbase64 = icon ;
     }
 
     public String getName() {
@@ -23,10 +25,10 @@ public class ContactModel{
     }
 
     public String getNumber() {
-        return number;
+        return phone;
     }
 
     public void setNumber(String number) {
-        this.number = number;
+        this.phone = number;
     }
 }

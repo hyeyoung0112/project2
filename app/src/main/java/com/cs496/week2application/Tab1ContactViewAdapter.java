@@ -1,6 +1,10 @@
 package com.cs496.week2application;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -71,7 +75,9 @@ public class Tab1ContactViewAdapter extends BaseAdapter {
 
         holder.tvname.setText(contactModelArrayList.get(position).getName());
         holder.tvnumber.setText(contactModelArrayList.get(position).getNumber());
-        holder.ivphoto.setImageBitmap(contactModelArrayList.get(position).getIcon());
+        if (contactModelArrayList.get(position).getIcon() != null) holder.ivphoto.setImageBitmap(getBitmapFromString(contactModelArrayList.get(position).getIcon()));
+
+        Log.d("FINAL CONTACT>>>>>", contactModelArrayList.get(position).getName() + "  " + contactModelArrayList.get(position).getNumber());
 
         return convertView;
     }
@@ -81,5 +87,14 @@ public class Tab1ContactViewAdapter extends BaseAdapter {
         protected TextView tvname, tvnumber;
         protected ImageView ivphoto;
 
+    }
+
+    private Bitmap getBitmapFromString(String jsonString) {
+        /*
+         * This Function converts the String back to Bitmap
+         * */
+        byte[] decodedString = Base64.decode(jsonString, Base64.DEFAULT);
+        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+        return decodedByte;
     }
 }

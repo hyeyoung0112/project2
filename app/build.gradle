@@ -47,4 +47,6 @@ dependencies {
     //camera dependency
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.karumi:dexter:4.2.0'
+    //server parsing dependency
+    implementation 'com.google.code.gson:gson:2.8.2'
 }
