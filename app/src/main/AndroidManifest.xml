@@ -53,6 +53,12 @@
             android:theme="@style/Theme.Transparent" />
         <activity android:name="com.cs496.week2application.CameraActivity" />
         <activity android:name="com.cs496.week2application.SaveActivity" />
+        <activity android:name="com.cs496.week2application.GoogleLoginActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <activity
             android:name="com.cs496.week2application.Main2Activity"
             android:label="CS496 Week2"
@@ -64,13 +70,6 @@
                 <data android:scheme="@string/kakao_scheme"
                     android:host="@string/kakaolink_host" />
             </intent-filter>
-            <intent-filter>
-
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-
-
         </activity>
         <meta-data android:name="com.kakao.sdk.AppKey"
             android:value="@string/kakao_app_key" />

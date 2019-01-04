@@ -3,13 +3,13 @@ package com.cs496.week2application;
 import android.graphics.Bitmap;
 
 public class ContactModel{
-    private String id;
+    private String userId;
     private String name, phone;
     private Bitmap icon;
 
-    public void setId(String _id) {this.id = _id;}
+    public void setId(String _id) {this.userId = _id;}
 
-    public String getId() {return this.id;}
+    public String getId() {return this.userId;}
 
     public Bitmap getIcon() {
         return this.icon ;

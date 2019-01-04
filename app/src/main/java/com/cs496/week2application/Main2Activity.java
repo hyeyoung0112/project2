@@ -1,5 +1,6 @@
 package com.cs496.week2application;
 
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
@@ -17,14 +18,17 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class Main2Activity extends AppCompatActivity {
-
-
-
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
      * fragments for each of the sections. We use a
@@ -43,22 +47,18 @@ public class Main2Activity extends AppCompatActivity {
     // key to store image path in savedInstance state
     public static final String KEY_IMAGE_STORAGE_PATH = "image_path";
 
-
+    private String userID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main2);
 
-
-
-
+        Intent intent = getIntent();
+        userID = intent.getStringExtra("userAccount");
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-
         setSupportActionBar(toolbar);
-
-
 
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
@@ -73,7 +73,7 @@ public class Main2Activity extends AppCompatActivity {
 
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
         tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
-        }
+    }
 
     private void printKeyHash() {
         try {
@@ -82,7 +82,6 @@ public class Main2Activity extends AppCompatActivity {
                 MessageDigest md = MessageDigest.getInstance(("SHA"));
                 md.update(signature.toByteArray());
                 Log.d("KeyHash", Base64.encodeToString(md.digest(),Base64.DEFAULT));
-
             }
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
@@ -187,6 +186,6 @@ public class Main2Activity extends AppCompatActivity {
         imageStoragePath = savedInstanceState.getString(KEY_IMAGE_STORAGE_PATH);
     }
 
-
+    public String getUserID(){ return this.userID; }
 }
 

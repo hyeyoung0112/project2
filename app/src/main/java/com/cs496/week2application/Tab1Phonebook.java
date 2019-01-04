@@ -65,6 +65,8 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
     private FloatingActionButton msgButton;
     private FloatingActionButton addButton;
 
+    private String userID;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -176,6 +178,19 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
         }
     }
 
+    public boolean InternetPermissioncheck() {
+        if (checkselfpermission(Manifest.permission.INTERNET) == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        } else {
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.INTERNET}, 100);
+            if (checkselfpermission(Manifest.permission.INTERNET) == PackageManager.PERMISSION_GRANTED) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
     public boolean WritePermissioncheck() {
         if (checkselfpermission(Manifest.permission.WRITE_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
             return true;
@@ -190,19 +205,36 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
     }
 
     private void LoadContacts(ListView LV) {
-        //Get contacts from server
+        //Get contacts from server if account exists
         ArrayList<ContactServerModel> FromServerContacts;
-        String sb = HttpConnection.GetAllContacts();
-        Log.d("SERVER_CONNECTION>>>>>", "Got string: " + sb);
-        Gson gson = new Gson();
-        Type type = new TypeToken<List<ContactServerModel>>(){}.getType();
-        FromServerContacts = gson.fromJson(sb, type);
         Set<String> ServerContactNames = new HashSet<String>();
-        for (int i = 0; i < FromServerContacts.size(); i++) {
-            ServerContactNames.add(FromServerContacts.get(i).getName());
-            Log.d("ADDCONTACT>>>>>", "Names in server: " + FromServerContacts.get(i).getName());
-        }
+        if (userID != "" && InternetPermissioncheck()) {
+            String sb = HttpConnection.GetAllContacts(userID);
+            Log.d("SERVER_CONNECTION>>>>>", "Got string: " + sb);
+            Gson gson = new Gson();
+            Type type = new TypeToken<List<ContactServerModel>>() {
+            }.getType();
+            FromServerContacts = gson.fromJson(sb, type);
+            for (int i = 0; i < FromServerContacts.size(); i++) {
+                ServerContactNames.add(FromServerContacts.get(i).getName());
+                Log.d("ADDCONTACT>>>>>", "Names in server: " + FromServerContacts.get(i).getName());
+            }
 
+            //add server contacts which are not in device
+            for (int i = 0; i<FromServerContacts.size(); i++) {
+                ContactServerModel serverModel = FromServerContacts.get(i);
+                if (contactModelMap.get(serverModel.getName()) == null) {
+                    ContactModel serverContact = new ContactModel();
+                    serverContact.setName(serverModel.getName());
+                    serverContact.setNumber(serverModel.getNumber());
+                    if (serverModel.getIcon() != null)
+                        serverContact.setIcon(getBitmapFromString(serverModel.getIcon()));
+                    else
+                        serverContact.setIcon(BitmapFactory.decodeResource(getContext().getResources(), R.drawable.default_contact_photo));
+                    contactModelMap.put(serverContact.getName(), serverContact);
+                }
+            }
+        }
         //Get contacts from device
         Cursor phones = getActivity().getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC");
         while (phones.moveToNext()) {
@@ -231,6 +263,7 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
             }
 
             ContactModel contactModel = new ContactModel();
+            contactModel.setId(userID);
             contactModel.setName(name);
             contactModel.setNumber(phoneNumber);
             contactModel.setIcon(bp);
@@ -238,9 +271,10 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
             //Log.d("DEVICE CONTACT>>>>>", name + "  " + phoneNumber);
 
             //add contact information to server if server doesn't have such contact
-            if (!ServerContactNames.contains(name)) {
+            if (userID != "" && !ServerContactNames.contains(name)) {
                 JSONObject obj = new JSONObject();
                 try {
+                    obj.put("user_id", userID);
                     obj.put("name", name);
                     obj.put("phone", phoneNumber);
                     obj.put("photo", getStringFromBitmap(bp));
@@ -254,44 +288,11 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
         }
         phones.close();
 
-        //add server contacts which are not in device
-        for (int i = 0; i<FromServerContacts.size(); i++) {
-            ContactServerModel serverModel = FromServerContacts.get(i);
-            if (contactModelMap.get(serverModel.getName()) == null) {
-                ContactModel serverContact = new ContactModel();
-                serverContact.setName(serverModel.getName());
-                serverContact.setNumber(serverModel.getNumber());
-                if (serverModel.getIcon() != null)
-                    serverContact.setIcon(getBitmapFromString(serverModel.getIcon()));
-                else
-                    serverContact.setIcon(BitmapFactory.decodeResource(getContext().getResources(), R.drawable.default_contact_photo));
-                contactModelMap.put(serverContact.getName(), serverContact);
-            }
-        }
-
         adapter = new Tab1ContactViewAdapter(getActivity().getApplicationContext(), contactModelMap);
         if (!(adapter.isEmpty())) {
             LV.setAdapter(adapter);
         }
         return;
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        Log.i("전화번호부 fragment", "onPause()");
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        Log.i("전화번호부 fragment", "onStop()");
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        Log.i("전화번호부 fragment", "onDestroy()");
     }
 
     private String getStringFromBitmap(Bitmap bitmapPicture) {
