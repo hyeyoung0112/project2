@@ -40,9 +40,11 @@ public class GoogleLoginActivity extends Activity {
         // the GoogleSignInAccount will be non-null.
         account = GoogleSignIn.getLastSignedInAccount(this);
         if (account != null) {
+            String[] tempArr;
+            tempArr = account.toString().split("@");
             Intent intent = new Intent(this, Main2Activity.class);
-            intent.putExtra("userAccount", account.toString());
-            Log.d("GOOGLE_LOGIN>>>>>", account.toString());
+            intent.putExtra("userAccount", tempArr[1]);
+            Log.d("GOOGLE_LOGIN>>>>>", tempArr[1]);
             startActivity(intent);
         }
     }

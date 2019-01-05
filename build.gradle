@@ -29,7 +29,10 @@ subprojects {
     }
 }
 
-
+ext {
+    retrofitVersion = '2.3.0'
+    okhttpVersion = '3.9.0'
+}
 
 
 task clean(type: Delete) {

@@ -1,13 +1,10 @@
-
 package com.cs496.week2application;
 
 import android.Manifest;
-import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -30,26 +27,18 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
-import org.json.JSONArray;
-import org.json.JSONException;
+import com.google.gson.JsonObject;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Array;
+import java.io.OutputStream;
 import java.util.ArrayList;
 
-import java.lang.reflect.Type;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -67,6 +56,8 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
 
     private String userID;
 
+    private RetrofitRequest retrofit = new RetrofitRequest();
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -78,6 +69,9 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
         addButton = rootView.findViewById(R.id.addContactButton);
 
         contactModelMap = new HashMap<String, ContactModel>();
+
+        Intent intent = getActivity().getIntent();
+        userID = intent.getStringExtra("userAccount");
 
         return rootView;
     }
@@ -204,62 +198,39 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
         }
     }
 
-    private void LoadContacts(ListView LV) {
-        //Get contacts from server if account exists
-        ArrayList<ContactServerModel> FromServerContacts;
-        Set<String> ServerContactNames = new HashSet<String>();
-        if (userID != "" && InternetPermissioncheck()) {
-            String sb = HttpConnection.GetAllContacts(userID);
-            Log.d("SERVER_CONNECTION>>>>>", "Got string: " + sb);
-            Gson gson = new Gson();
-            Type type = new TypeToken<List<ContactServerModel>>() {
-            }.getType();
-            FromServerContacts = gson.fromJson(sb, type);
-            for (int i = 0; i < FromServerContacts.size(); i++) {
-                ServerContactNames.add(FromServerContacts.get(i).getName());
-                Log.d("ADDCONTACT>>>>>", "Names in server: " + FromServerContacts.get(i).getName());
-            }
-
-            //add server contacts which are not in device
-            for (int i = 0; i<FromServerContacts.size(); i++) {
-                ContactServerModel serverModel = FromServerContacts.get(i);
-                if (contactModelMap.get(serverModel.getName()) == null) {
-                    ContactModel serverContact = new ContactModel();
-                    serverContact.setName(serverModel.getName());
-                    serverContact.setNumber(serverModel.getNumber());
-                    if (serverModel.getIcon() != null)
-                        serverContact.setIcon(getBitmapFromString(serverModel.getIcon()));
-                    else
-                        serverContact.setIcon(BitmapFactory.decodeResource(getContext().getResources(), R.drawable.default_contact_photo));
-                    contactModelMap.put(serverContact.getName(), serverContact);
-                }
-            }
-        }
+    private Map<String, ContactModel> loadContactsFromDevice(String userID){
+        Map<String, ContactModel> deviceContactModelMap = new HashMap<String, ContactModel>();
         //Get contacts from device
         Cursor phones = getActivity().getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC");
         while (phones.moveToNext()) {
-            //default photo is in res/drawable folder
-            Bitmap bp = BitmapFactory.decodeResource(getContext().getResources(),
-                    R.drawable.default_contact_photo);
 
             //get name, number, and image uri from contact info
             String name = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
             String phoneNumber = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
-            String image_uri = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_URI));
-
-            //if image is not default
-            if (image_uri != null) {
-                try {
-                    bp = MediaStore.Images.Media
-                            .getBitmap(getContext().getContentResolver(),
-                                    Uri.parse(image_uri));
-                } catch (FileNotFoundException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+            String uriStr = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_URI));
+            Uri image_uri;
+            if (uriStr != null) image_uri = Uri.parse(uriStr);
+            else image_uri = Uri.parse("android.resource://" + getContext().getPackageName() + "/drawable/default_contact_photo");
+            File file = null;
+            Bitmap bp;
+            try {
+                bp = MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), image_uri);
+                //make image files of bitmaps
+                File storeDir = new File(Environment.getExternalStorageDirectory(), "contactPhotos");
+                if (!storeDir.exists()) {
+                    if (!storeDir.mkdirs()) {
+                        Log.d("MAKEDIRECTORY>>>>>", "failed to create directory");
+                    }
                 }
+                String filename = java.util.Base64.getEncoder().encodeToString((userID + name).getBytes()) + ".png";
+                file = new File(storeDir.getPath() + File.separator + filename);
+
+                OutputStream os = new BufferedOutputStream(new FileOutputStream(file));
+                bp.compress(Bitmap.CompressFormat.PNG, 100, os);
+                os.close();
+            } catch(IOException e) {
+                Log.d("MAKEIMGFILE>>>>>", "failed to create image file: " + e.getMessage());
+                bp = null;
             }
 
             ContactModel contactModel = new ContactModel();
@@ -267,56 +238,61 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
             contactModel.setName(name);
             contactModel.setNumber(phoneNumber);
             contactModel.setIcon(bp);
-            contactModelMap.put(name, contactModel);
-            //Log.d("DEVICE CONTACT>>>>>", name + "  " + phoneNumber);
+            if (file != null) {
+                contactModel.setImageUri(file.getAbsolutePath());
+            }
+            deviceContactModelMap.put(name, contactModel);
+        }
+        phones.close();
+        return deviceContactModelMap;
+    }
+
+    private void LoadContacts(ListView LV) {
+        //Load contacts from device
+        contactModelMap = loadContactsFromDevice(userID);
+
+        //Get contacts from server if account exists
+        Set<String> ServerContactNames = new HashSet<String>();
+        if (userID != "" && InternetPermissioncheck()) {
+            Map<String, ContactServerModel> map = retrofit.GetAllContacts(userID);
+            for (ContactServerModel serverModel: map.values()) {
+                ContactModel serverContact = new ContactModel();
+                serverContact.setName(serverModel.getName());
+                serverContact.setNumber(serverModel.getNumber());
+                Bitmap bitmap = retrofit.GetImageBitmap(userID, java.util.Base64.getEncoder().encodeToString((userID + serverContact.getName()).getBytes()) + ".png");
+                serverContact.setIcon(bitmap);
+                contactModelMap.put(serverContact.getName(), serverContact);
+                Log.d("Load Contacts>>>>>", "name: " + serverContact.getName() + " number: " + serverContact.getNumber());
+                ServerContactNames.add(serverModel.getName());
+            }
+        }
+
+        for (ContactModel contact: contactModelMap.values()) {
+            String name = contact.getName();
+            String phoneNumber = contact.getNumber();
+            String filename = java.util.Base64.getEncoder().encodeToString((userID + name).getBytes()) + ".png";
+            String imageUri = contact.getImageUri();
 
             //add contact information to server if server doesn't have such contact
             if (userID != "" && !ServerContactNames.contains(name)) {
-                JSONObject obj = new JSONObject();
-                try {
-                    obj.put("user_id", userID);
-                    obj.put("name", name);
-                    obj.put("phone", phoneNumber);
-                    obj.put("photo", getStringFromBitmap(bp));
-                    Log.d("ADDCONTACT>>>>>", "Post to server: " + obj.toString());
-                    jsonArr.add(obj);
-                    HttpConnection.AddContactToServer(obj);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+                JsonObject obj = new JsonObject();
+                obj.addProperty("user_id", userID);
+                obj.addProperty("name", name);
+                obj.addProperty("phone", phoneNumber);
+                obj.addProperty("filename", filename);
+                //obj.put("photo", getStringFromBitmap(bp));
+
+                retrofit.PostContact(obj);
+                retrofit.PostImageFile(userID, filename, imageUri, getActivity().getContentResolver());
+                //set picture
             }
         }
-        phones.close();
 
         adapter = new Tab1ContactViewAdapter(getActivity().getApplicationContext(), contactModelMap);
         if (!(adapter.isEmpty())) {
             LV.setAdapter(adapter);
         }
         return;
-    }
-
-    private String getStringFromBitmap(Bitmap bitmapPicture) {
-        /*
-         * This functions converts Bitmap picture to a string which can be
-         * JSONified.
-         * */
-        final int COMPRESSION_QUALITY = 100;
-        String encodedImage;
-        ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
-        bitmapPicture.compress(Bitmap.CompressFormat.PNG, COMPRESSION_QUALITY,
-                byteArrayBitmapStream);
-        byte[] b = byteArrayBitmapStream.toByteArray();
-        encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
-        return encodedImage;
-    }
-
-    private Bitmap getBitmapFromString(String jsonString) {
-        /*
-         * This Function converts the String back to Bitmap
-         * */
-        byte[] decodedString = Base64.decode(jsonString, Base64.DEFAULT);
-        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-        return decodedByte;
     }
 }
 

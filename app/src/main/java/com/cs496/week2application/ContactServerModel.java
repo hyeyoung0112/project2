@@ -1,17 +1,32 @@
 package com.cs496.week2application;
 
 import android.graphics.Bitmap;
+import android.net.Uri;
 
 public class ContactServerModel {
+    private String userID;
     private String name, phone;
-    private String iconBase64;
+    private String fileName;
+    private Uri imageUri;
 
-    public String getIcon() {
-        return this.iconBase64 ;
+    public Uri getImageUri() {return this.imageUri;}
+
+    public void setImageUri(Uri newUri) {this.imageUri = newUri;}
+
+    public String getUserID() {
+        return this.userID;
     }
 
-    public void setIcon(String iconStr) {
-        this.iconBase64 = iconStr;
+    public void setUserID(String id) {
+        this.userID = id;
+    }
+
+    public String getIcon() {
+        return this.fileName ;
+    }
+
+    public void setIcon(String iconFile) {
+        this.fileName = iconFile;
     }
 
     public String getName() {
