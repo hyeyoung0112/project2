@@ -13,6 +13,7 @@ import android.provider.MediaStore;
 import android.support.v4.app.FragmentActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -32,12 +33,16 @@ import com.squareup.picasso.Target;
 import net.alhazmy13.imagefilter.ImageFilter;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
 public class PicSelectActivity extends FragmentActivity {
-    Bitmap mainImage;
+    Bitmap mainImage = null;
 
     ImageView selectView;
     RecyclerView recyclerView;
@@ -65,6 +70,14 @@ public class PicSelectActivity extends FragmentActivity {
         // Hook up clicks on the thumbnail views.
         Intent intent = getIntent();
         writePermission = intent.getBooleanExtra("writePermission", false);
+        String userID = intent.getStringExtra("userID");
+        String filename = intent.getStringExtra("filename");
+        RetrofitRequest retrofitRequest = new RetrofitRequest();
+        mainImage = retrofitRequest.GetImageBitmap(userID, filename);
+        if (mainImage == null) {
+            Toast.makeText(getApplicationContext(), "Cannot load image.", Toast.LENGTH_SHORT).show();
+            onBackPressed();
+        }
         selectView = findViewById(R.id.expanded_image);
         recyclerView = findViewById(R.id.filterThumbnails);
         facebookBtn = findViewById(R.id.facebookBtn);
@@ -204,9 +217,7 @@ public class PicSelectActivity extends FragmentActivity {
     @Override
     public void onResume(){
         super.onResume();
-        final String imgPath = getIntent().getStringExtra("imagePath");
-        if (imgPath != ""){
-            mainImage = BitmapFactory.decodeFile(imgPath);
+        if (mainImage != null){
             selectView.setImageBitmap(mainImage);
             LoadFilterThumbnails();
         }

@@ -14,26 +14,24 @@ import java.util.ArrayList;
 public class ImageAdapter extends BaseAdapter {
     Context context;
     int layout;
-    ArrayList<String> imgPaths;
+    ArrayList<GalleryPic> Pictures;
     LayoutInflater inf;
-    public ImageAdapter(Context context, int layout, ArrayList<String> imgs) {
+    public ImageAdapter(Context context, int layout, ArrayList<GalleryPic> pictures) {
         this.context=context;
         this.layout=layout;
-        this.imgPaths=imgs;
+        this.Pictures = pictures;
         inf = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
-
-
 
     @Override
     public int getCount() {
         //이미지셋에 있는 아이템의 수를 반환함(그리드뷰는 아이템의 수에 해당하는 행렬을 준비함)
-        return imgPaths.size();
+        return Pictures.size();
     }
 
     @Override
-    public String getItem(int position) {
-        return imgPaths.get(position);
+    public GalleryPic getItem(int position) {
+        return Pictures.get(position);
     }
 
     @Override
@@ -46,7 +44,7 @@ public class ImageAdapter extends BaseAdapter {
         if (convertView==null)
             convertView = inf.inflate(layout, null);
         ImageView iv = (ImageView)convertView.findViewById(R.id.imageView1);
-        Bitmap img = BitmapFactory.decodeFile(getItem(position));
+        Bitmap img = getItem(position).getBitmap();
         double width = img.getWidth();
         double height = img.getHeight();
         int desiredWidth = 120;
@@ -59,7 +57,4 @@ public class ImageAdapter extends BaseAdapter {
 
         return convertView;
     }
-
-
-
 }

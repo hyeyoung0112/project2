@@ -65,8 +65,9 @@ public class RetrofitRequest {
                     contacts = gson.fromJson(arr, type);
                     if (contacts != null) {
                         for (int i = 0; i < contacts.size(); i++) {
-                            if (contacts.get(i).getName() != "null")
+                            if (contacts.get(i).getName() != "null") {
                                 result.put(contacts.get(i).getName(), contacts.get(i));
+                            }
                         }
                     }
                     ContactServerModel contact = new ContactServerModel();
@@ -100,15 +101,61 @@ public class RetrofitRequest {
         });
     }
 
-/*
-    public ArrayList<Bitmap> GetAllImages(){
 
+    public Map<String, GalleryPic> GetAllImages(String userID){
+        Call<JsonArray> call = service.getUserGallery(userID);
+        Map<String, GalleryPic> result = new HashMap<>();
+        Thread getGalleryThread = new Thread(){
+            @Override public void run(){
+                try {
+                    JsonArray arr = call.execute().body();
+                    ArrayList<GalleryPic> galleryPics = new ArrayList<GalleryPic>();
+                    //parse response body to map
+                    Gson gson = new Gson();
+                    Type type = new TypeToken<List<GalleryPic>>() {}.getType();
+                    galleryPics = gson.fromJson(arr, type);
+                    if (galleryPics != null) {
+                        for (int i = 0; i < galleryPics.size(); i++) {
+                            result.put(galleryPics.get(i).getFilename(), galleryPics.get(i));
+                        }
+                    }
+                    GalleryPic pic = new GalleryPic("", "EndOfInput");
+                    result.put("CS496_application_result_test", pic);
+                } catch (IOException e) {
+                    Log.d("GetAllImages>>>>>", "IOException in getting all images : " + e.getMessage());
+                    GalleryPic pic = new GalleryPic("", "EndOfInput");
+                    result.put("CS496_application_result_test", pic);
+                }
+            }
+        };
+        getGalleryThread.start();
+        while (!result.containsKey("CS496_application_result_test")){}
+        result.remove("CS496_application_result_test");
+        for (GalleryPic galleryPic: result.values()) {
+            Log.d("Server Image>>>>>", "filename: " + galleryPic.getFilename());
+            Bitmap bp = GetImageBitmap(userID, galleryPic.getFilename());
+            galleryPic.setBitmap(bp);
+        }
+        return result;
     }
 
-    public void PostImage(String userID, String filename) {
-
+    public void PostImage(String userID, String filename, long lastModified) {
+        JsonObject obj = new JsonObject();
+        obj.addProperty("user_id", userID);
+        obj.addProperty("imgname", filename);
+        obj.addProperty("last_modified", lastModified);
+        Call<JsonObject> call = service.postUserGallery(obj);
+        call.enqueue(new Callback<JsonObject>(){
+            @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                Log.d("PostGallery>>>>>", obj.toString() + "posted to server.");
+                Log.d("Retrofit>>>>>", "PostGallery response: " + response.toString());
+            }
+            @Override public void onFailure(Call<JsonObject> call, Throwable t) {
+                Log.d("Retrofit>>>>>", "PostGallery response: " + t.toString());
+            }
+        });
     }
-*/
+
 
     public Bitmap GetImageBitmap(String userID, String filename) {
         ArrayList<Bitmap> bp = new ArrayList<>();
@@ -123,7 +170,7 @@ public class RetrofitRequest {
                 } catch(MalformedURLException e) {
                     Log.d("GetImage>>>>>","MalformedURLException: " + e.getMessage());
                 } catch(IOException e){
-                    Log.d("GetImage>>>>>","IOException: " + e.getMessage());
+                    Log.d("GetImage>>>>>","IOException: " + e.toString());
                 }
             }
         };
@@ -132,20 +179,20 @@ public class RetrofitRequest {
         return bp.get(0);
     }
 
-    public void PostImageFile(String userID, String filename, String imageUri, ContentResolver contentResolver){
+    public void PostImageFile(String userID, String filename, String imageUri){
         File file = new File(imageUri);
         RequestBody requestFile = RequestBody.create(
                 MediaType.parse("image/*"), file
         );
 
         // MultipartBody.Part is used to send also the actual file name
-        MultipartBody.Part body = MultipartBody.Part.createFormData("picture", filename, requestFile);
+        MultipartBody.Part body = MultipartBody.Part.createFormData("image", filename, requestFile);
 
         Call<ResponseBody> call = service.postUserPhoto(userID, filename, body);
         call.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                Log.d("Retrofit>>>>>", "PostImageFile response 1: " + response.message());
+                Log.d("Retrofit>>>>>", "PostImageFile response 1: " + response.toString());
             }
 
             @Override
@@ -153,18 +200,5 @@ public class RetrofitRequest {
                 Log.d("Retrofit>>>>>", "PostImageFile response  2: " + t.getMessage());
             }
         });
-    }
-
-    public String getRealPathFromURI(Uri contentUri, ContentResolver contentResolver) {
-        Log.d("GETPATH>>>>>", "contentUri: " + contentUri.toString());
-        Cursor cursor = contentResolver.query(contentUri, null, null, null, null);
-        cursor.moveToNext();
-        String path = cursor.getString(cursor.getColumnIndex(MediaStore.MediaColumns.DATA));
-        Uri uri = Uri.fromFile(new File(path));
-
-        Log.d("GETPATH>>>>>", "getRealPathFromURI(), path : " + uri.toString());
-
-        cursor.close();
-        return path;
     }
 }

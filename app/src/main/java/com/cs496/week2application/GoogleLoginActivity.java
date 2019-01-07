@@ -1,11 +1,17 @@
 package com.cs496.week2application;
 
+import android.Manifest;
 import android.app.Activity;
+import android.app.Application;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.PermissionChecker;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -36,17 +42,22 @@ public class GoogleLoginActivity extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
-        // Check for existing Google Sign In account, if the user is already signed in
-        // the GoogleSignInAccount will be non-null.
-        account = GoogleSignIn.getLastSignedInAccount(this);
-        if (account != null) {
-            String[] tempArr;
-            tempArr = account.toString().split("@");
-            Intent intent = new Intent(this, Main2Activity.class);
-            intent.putExtra("userAccount", tempArr[1]);
-            Log.d("GOOGLE_LOGIN>>>>>", tempArr[1]);
-            startActivity(intent);
-        }
+        ReadContactPermissioncheck();
+        WriteContactPermissioncheck();
+        InternetPermissioncheck();
+        WriteStoragePermissioncheck();
+
+//        // Check for existing Google Sign In account, if the user is already signed in
+//        // the GoogleSignInAccount will be non-null.
+//        account = GoogleSignIn.getLastSignedInAccount(this);
+//        if (account != null) {
+//            String[] tempArr;
+//            tempArr = account.toString().split("@");
+//            Intent intent = new Intent(this, Main2Activity.class);
+//            intent.putExtra("userAccount", tempArr[1]);
+//            Log.d("GOOGLE_LOGIN>>>>>", tempArr[1]);
+//            startActivity(intent);
+//        }
     }
 
     @Override
@@ -56,7 +67,14 @@ public class GoogleLoginActivity extends Activity {
         signInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                signIn();
+                if (!ReadContactPermissioncheck() || !WriteContactPermissioncheck() || !WriteStoragePermissioncheck()) {
+                    Toast.makeText(getApplicationContext(), "앱 실행을 위해 필요한 권한을 허용해 주세요.", Toast.LENGTH_SHORT).show();
+                    ReadContactPermissioncheck();
+                    WriteContactPermissioncheck();
+                    WriteStoragePermissioncheck();
+                } else {
+                    signIn();
+                }
             }
         });
 
@@ -64,12 +82,18 @@ public class GoogleLoginActivity extends Activity {
         continueButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(getApplicationContext(), Main2Activity.class);
-                String[] tempArr;
-                tempArr = account.toString().split("@");
-                intent.putExtra("userAccount", tempArr[1]);
-                Log.d("GOOGLE_LOGIN>>>>>", tempArr[1]);
-                startActivity(intent);
+                if (!ReadContactPermissioncheck() || !WriteContactPermissioncheck() || !WriteStoragePermissioncheck()) {
+                    Toast.makeText(getApplicationContext(), "앱 실행을 위해 필요한 권한을 허용해 주세요.", Toast.LENGTH_SHORT).show();
+                    ReadContactPermissioncheck();
+                    WriteContactPermissioncheck();
+                    WriteStoragePermissioncheck();
+                }
+                else {
+                    Intent intent = new Intent(getApplicationContext(), Main2Activity.class);
+                    intent.putExtra("userAccount", "");
+                    Log.d("GOOGLE_LOGIN>>>>>", "No LogIn");
+                    startActivity(intent);
+                }
             }
         });
     }
@@ -109,6 +133,62 @@ public class GoogleLoginActivity extends Activity {
             Intent intent = new Intent(this, Main2Activity.class);
             intent.putExtra("userAccount", "");
             startActivity(intent);
+        }
+    }
+
+    public int checkselfpermission(String permission) {
+        return PermissionChecker.checkSelfPermission(getApplicationContext(), permission);
+    }
+
+    public boolean ReadContactPermissioncheck() {
+        if (checkselfpermission(Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS}, 100);
+            if (checkselfpermission(Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    public boolean InternetPermissioncheck() {
+        if (checkselfpermission(Manifest.permission.INTERNET) == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.INTERNET}, 100);
+            if (checkselfpermission(Manifest.permission.INTERNET) == PackageManager.PERMISSION_GRANTED) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    public boolean WriteContactPermissioncheck() {
+        if (checkselfpermission(Manifest.permission.WRITE_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_CONTACTS}, 100);
+            if (checkselfpermission(Manifest.permission.WRITE_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    public boolean WriteStoragePermissioncheck() {
+        if (checkselfpermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 100);
+            if (checkselfpermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 }

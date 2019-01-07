@@ -14,7 +14,7 @@ import retrofit2.http.Part;
 import retrofit2.http.Path;
 
 public interface HttpService {
-    @GET("/api/contacts/user_id/{user}")
+    @GET("/api/contacts/user_id/{user}/")
     Call<JsonArray> getUserContacts(
             @Path("user") String userName
     );
@@ -23,13 +23,13 @@ public interface HttpService {
             @Body JsonObject object
     );
 
-    @GET("/api/images/{user}")
+    @GET("/api/images/user_id/{user}")
     Call<JsonArray> getUserGallery(
             @Path("user") String userName
     );
-    @POST("/api/images/{user}")
-    Call<JsonArray> postUserGallery(
-            @Path("user") String userName
+    @POST("/api/images/")
+    Call<JsonObject> postUserGallery(
+            @Body JsonObject object
     );
     /*
     @Multipart
@@ -43,8 +43,8 @@ public interface HttpService {
     @Multipart
     @POST("/{user}/{filename}")
     Call<ResponseBody> postUserPhoto(
-            @Path("user") String userName,
-            @Path("filename") String fileName,
-            @Part MultipartBody.Part body
+            @Path("user") String user_id,
+            @Path("filename") String filename,
+            @Part MultipartBody.Part img
     );
 }

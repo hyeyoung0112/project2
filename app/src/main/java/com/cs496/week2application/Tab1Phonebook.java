@@ -73,6 +73,10 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
         Intent intent = getActivity().getIntent();
         userID = intent.getStringExtra("userAccount");
 
+        if (Permissioncheck()) {
+            LoadContacts(contactsListView);
+        }
+
         return rootView;
     }
 
@@ -80,10 +84,6 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
     public void onResume() {
         super.onResume();
         Log.i("전화번호부 fragment", "onResume()");
-
-        if (Permissioncheck()) {
-            LoadContacts(contactsListView);
-        }
 
         WritePermissioncheck();
 
@@ -222,7 +222,7 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
                         Log.d("MAKEDIRECTORY>>>>>", "failed to create directory");
                     }
                 }
-                String filename = java.util.Base64.getEncoder().encodeToString((userID + name).getBytes()) + ".png";
+                String filename = java.util.Base64.getUrlEncoder().encodeToString((userID + name).getBytes()) + ".png";
                 file = new File(storeDir.getPath() + File.separator + filename);
 
                 OutputStream os = new BufferedOutputStream(new FileOutputStream(file));
@@ -259,7 +259,7 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
                 ContactModel serverContact = new ContactModel();
                 serverContact.setName(serverModel.getName());
                 serverContact.setNumber(serverModel.getNumber());
-                Bitmap bitmap = retrofit.GetImageBitmap(userID, java.util.Base64.getEncoder().encodeToString((userID + serverContact.getName()).getBytes()) + ".png");
+                Bitmap bitmap = retrofit.GetImageBitmap(userID, java.util.Base64.getUrlEncoder().encodeToString((userID + serverContact.getName()).getBytes()) + ".png");
                 serverContact.setIcon(bitmap);
                 contactModelMap.put(serverContact.getName(), serverContact);
                 Log.d("Load Contacts>>>>>", "name: " + serverContact.getName() + " number: " + serverContact.getNumber());
@@ -270,11 +270,11 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
         for (ContactModel contact: contactModelMap.values()) {
             String name = contact.getName();
             String phoneNumber = contact.getNumber();
-            String filename = java.util.Base64.getEncoder().encodeToString((userID + name).getBytes()) + ".png";
+            String filename = java.util.Base64.getUrlEncoder().encodeToString((userID + name).getBytes()) + ".png";
             String imageUri = contact.getImageUri();
 
             //add contact information to server if server doesn't have such contact
-            if (userID != "" && !ServerContactNames.contains(name)) {
+            if (userID != ""  && !ServerContactNames.contains(name)) {
                 JsonObject obj = new JsonObject();
                 obj.addProperty("user_id", userID);
                 obj.addProperty("name", name);
@@ -283,7 +283,7 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
                 //obj.put("photo", getStringFromBitmap(bp));
 
                 retrofit.PostContact(obj);
-                retrofit.PostImageFile(userID, filename, imageUri, getActivity().getContentResolver());
+                retrofit.PostImageFile(userID, filename, imageUri);
                 //set picture
             }
         }
