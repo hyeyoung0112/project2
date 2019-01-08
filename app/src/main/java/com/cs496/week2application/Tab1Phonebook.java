@@ -253,7 +253,7 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
 
         //Get contacts from server if account exists
         Set<String> ServerContactNames = new HashSet<String>();
-        if (userID != "" && InternetPermissioncheck()) {
+        if (!userID.equals("") && InternetPermissioncheck()) {
             Map<String, ContactServerModel> map = retrofit.GetAllContacts(userID);
             for (ContactServerModel serverModel: map.values()) {
                 ContactModel serverContact = new ContactModel();
@@ -265,16 +265,14 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
                 Log.d("Load Contacts>>>>>", "name: " + serverContact.getName() + " number: " + serverContact.getNumber());
                 ServerContactNames.add(serverModel.getName());
             }
-        }
 
-        for (ContactModel contact: contactModelMap.values()) {
-            String name = contact.getName();
-            String phoneNumber = contact.getNumber();
-            String filename = java.util.Base64.getUrlEncoder().encodeToString((userID + name).getBytes()) + ".png";
-            String imageUri = contact.getImageUri();
+            for (ContactModel contact: contactModelMap.values()) {
+                String name = contact.getName();
+                String phoneNumber = contact.getNumber();
+                String filename = java.util.Base64.getUrlEncoder().encodeToString((userID + name).getBytes()) + ".png";
+                String imageUri = contact.getImageUri();
 
-            //add contact information to server if server doesn't have such contact
-            if (userID != ""  && !ServerContactNames.contains(name)) {
+                //add contact information to server if server doesn't have such contact
                 JsonObject obj = new JsonObject();
                 obj.addProperty("user_id", userID);
                 obj.addProperty("name", name);
@@ -284,7 +282,6 @@ public class Tab1Phonebook extends Fragment implements ActivityCompat.OnRequestP
 
                 retrofit.PostContact(obj);
                 retrofit.PostImageFile(userID, filename, imageUri);
-                //set picture
             }
         }
 

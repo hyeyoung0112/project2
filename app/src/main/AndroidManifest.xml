@@ -14,12 +14,8 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -52,7 +48,6 @@
             android:theme="@style/AppTheme.NoActionBar"/>
         <activity android:name="com.cs496.week2application.AddContactActivity"
             android:theme="@style/Theme.Transparent" />
-        <activity android:name="com.cs496.week2application.CameraActivity" />
         <activity android:name="com.cs496.week2application.SaveActivity" />
         <activity android:name="com.cs496.week2application.GoogleLoginActivity">
             <intent-filter>
@@ -78,6 +73,8 @@
                 <action android:name="OPEN_ACTIVITY"/>
             </intent-filter>
         </activity>
+
+        <activity android:name="com.cs496.week2application.JoyStickActivity"/>
 
         <service
             android:name=".RobotCtrlService">

@@ -10,6 +10,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -66,6 +67,7 @@ public class Tab2Images extends Fragment {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if (ReadPermissioncheck()) {
                     Intent intent = new Intent(getActivity().getApplicationContext(), PicSelectActivity.class);
+                    intent.putExtra("filePath", adapter.getItem(position).getFilePath());
                     intent.putExtra("userID", userID);
                     intent.putExtra("filename", adapter.getItem(position).getFilename());
                     intent.putExtra("writePermission", writePermission);
@@ -110,7 +112,7 @@ public class Tab2Images extends Fragment {
         //arraylist of pictures to display
         ArrayList<GalleryPic> galleryPics = new ArrayList<GalleryPic>(devicePics.values());
 
-        if (InternetPermissioncheck() && userID != "") {
+        if (InternetPermissioncheck() && !userID.equals("")) {
             //get pictures from server
             Map<String, GalleryPic> serverPics = retrofit.GetAllImages(userID);
             ArrayList<String> serverPicKeys = new ArrayList<String>(serverPics.keySet());
