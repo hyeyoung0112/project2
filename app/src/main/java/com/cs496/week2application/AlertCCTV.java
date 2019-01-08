@@ -1,5 +1,6 @@
 package com.cs496.week2application;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -10,13 +11,15 @@ import android.view.animation.AnimationUtils;
 import android.webkit.WebView;
 
 public class AlertCCTV extends AppCompatActivity {
+    public static Activity alertcctv;
 
     String STREAMING_SERVER_URL = "http://192.168.43.139:8081/";
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.alertcctv);
+        alertcctv = AlertCCTV.this;
+
         View view = findViewById(R.id.intruder);
         startBlinkingAnimation(view);
         //view = findViewById(R.id.cctvWebView2);
@@ -42,10 +45,7 @@ public class AlertCCTV extends AppCompatActivity {
                 return true;
             }
         });
-
     }
-
-
     public void startBlinkingAnimation(View view) {
         Animation startAnimation = AnimationUtils.loadAnimation(this, R.anim.blink_animation);
         view.startAnimation(startAnimation);

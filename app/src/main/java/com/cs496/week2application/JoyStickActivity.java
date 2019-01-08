@@ -11,6 +11,9 @@ public class JoyStickActivity extends AppCompatActivity implements JoystickView.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        AlertCCTV AC = (AlertCCTV) AlertCCTV.alertcctv;
+        AC.finish();
+
         JoystickView joystick = new JoystickView(this);
         setContentView(R.layout.activity_joystick);
         WebView webView = findViewById(R.id.joystickWebview);
