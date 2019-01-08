@@ -21,14 +21,13 @@
             android:textSize = "35dp"
             android:textColor="#ff0000"
             android:textAlignment="center"/>
-        <ImageView
-            android:id = "@+id/cctvImageView"
-            android:layout_width="match_parent"
-            android:layout_height="300dp"
-            android:layout_marginLeft="30dp"
-            android:layout_marginRight="30dp"
-            android:layout_marginTop="30dp"
-            android:background="#00ffff"/>
+
+        <WebView
+            android:id="@+id/cctvWebView"
+            android:layout_width="320dp"
+            android:layout_height="240dp"
+            android:layout_margin="32dp" />
+
     </LinearLayout>
 
 

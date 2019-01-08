@@ -54,12 +54,16 @@ dependencies {
     implementation 'com.karumi:dexter:4.2.0'
     //server parsing dependency
     implementation 'com.google.code.gson:gson:2.8.2'
-    implementation 'com.google.firebase:firebase-auth:16.0.4'
-    implementation 'com.google.android.gms:play-services-auth:16.0.0'
+    implementation 'com.google.firebase:firebase-auth:16.1.0'
+    implementation 'com.google.android.gms:play-services-auth:16.0.1'
     //volly dependency for server communication
     implementation 'com.android.volley:volley:1.1.1'
     //retrofit dependency for http requests
     implementation "com.squareup.retrofit2:retrofit:$rootProject.retrofitVersion"
     implementation "com.squareup.retrofit2:converter-gson:$rootProject.retrofitVersion"
     implementation "com.squareup.okhttp3:okhttp:$rootProject.okhttpVersion"
+    //FMC dependency for push notice
+    implementation 'com.google.firebase:firebase-core:16.0.6'
+    implementation 'com.google.firebase:firebase-messaging:17.3.4'
 }
+apply plugin: 'com.google.gms.google-services'
