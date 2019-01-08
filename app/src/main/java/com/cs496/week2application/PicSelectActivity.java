@@ -33,6 +33,7 @@ import com.squareup.picasso.Target;
 import net.alhazmy13.imagefilter.ImageFilter;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -70,13 +71,20 @@ public class PicSelectActivity extends FragmentActivity {
         // Hook up clicks on the thumbnail views.
         Intent intent = getIntent();
         writePermission = intent.getBooleanExtra("writePermission", false);
+        String filePath = intent.getStringExtra("filePath");
         String userID = intent.getStringExtra("userID");
         String filename = intent.getStringExtra("filename");
-        RetrofitRequest retrofitRequest = new RetrofitRequest();
-        mainImage = retrofitRequest.GetImageBitmap(userID, filename);
-        if (mainImage == null) {
-            Toast.makeText(getApplicationContext(), "Cannot load image.", Toast.LENGTH_SHORT).show();
-            onBackPressed();
+        File file = new File(filePath);
+        if (file.exists()) {
+            mainImage = BitmapFactory.decodeFile(filePath);
+        }
+        else {
+            RetrofitRequest retrofitRequest = new RetrofitRequest();
+            mainImage = retrofitRequest.GetImageBitmap(userID, filename);
+            if (mainImage == null) {
+                Toast.makeText(getApplicationContext(), "Cannot load image.", Toast.LENGTH_SHORT).show();
+                onBackPressed();
+            }
         }
         selectView = findViewById(R.id.expanded_image);
         recyclerView = findViewById(R.id.filterThumbnails);
