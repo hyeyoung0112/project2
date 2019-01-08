@@ -72,6 +72,12 @@
                     android:host="@string/kakaolink_host" />
             </intent-filter>
         </activity>
+        <activity android:name="com.cs496.week2application.AlertCCTV">
+            <intent-filter>
+                <category android:name="android.intent.category.DEFAULT" />
+                <action android:name="OPEN_ACTIVITY"/>
+            </intent-filter>
+        </activity>
 
         <service
             android:name=".RobotCtrlService">

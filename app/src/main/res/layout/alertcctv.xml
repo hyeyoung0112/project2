@@ -9,23 +9,17 @@
         android:orientation="vertical">
 
         <TextView
+            android:id="@+id/intruder"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="BIG BROTHER IS WATCHING"
+            android:layout_marginTop="50dp"
+            android:text="INTRUDER DETECTED"
             android:textAlignment="center"
-            android:textSize="25dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text = "YOU"
-            android:textSize = "35dp"
             android:textColor="#ff0000"
-            android:textAlignment="center"/>
+            android:textSize="35dp" />
 
         <WebView
-            android:id="@+id/cctvWebView"
+            android:id="@+id/cctvWebView2"
             android:layout_width="320dp"
             android:layout_height="240dp"
             android:layout_margin="32dp" />
