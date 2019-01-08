@@ -1,7 +1,9 @@
 package com.cs496.week2application;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -32,7 +34,17 @@ public class AlertCCTV extends AppCompatActivity {
         String url =STREAMING_SERVER_URL;
         webView.loadUrl(url);
 
+        webView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                Intent intent = new Intent(getApplicationContext(), JoyStickActivity.class);
+                startActivity(intent);
+                return true;
+            }
+        });
+
     }
+
 
     public void startBlinkingAnimation(View view) {
         Animation startAnimation = AnimationUtils.loadAnimation(this, R.anim.blink_animation);
